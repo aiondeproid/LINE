@@ -32,21 +32,19 @@ const REPORT_KEYWORDS = (PROPS.getProperty('REPORT_KEYWORDS') || '体調不良�
 
 // ===== 体調不良報告の質問 =====
 // choices: ボタンで出す選択肢 / free: 選択肢以外の入力も受け付ける / picker: 日付・日時の選択ボタンを出す
+// askText: 押したら回答にせず、文字での入力を促すボタン（{ ボタン名: 促す文 }）
 const QUESTIONS = [
   { key: 'name', label: 'お名前', text: 'お名前を教えてください。' },
   { key: 'who', label: '本人／家族', text: 'ご本人ですか、ご家族ですか？', choices: ['本人', '家族'] },
-  { key: 'when', label: '発生日時', text: '事象の発生日時はいつですか？\nボタンで選ぶか、「11/19 14:30」のように入力してください。', picker: 'datetime' },
-  { key: 'where', label: '発生場所', text: '発生場所はどこですか？\nラインの場合はライン名を入力してください。', choices: ['トイレ', '更衣室', '休憩室', '家'], free: true },
-  { key: 'type', label: '嘔吐・下痢', text: '嘔吐・下痢のどちらですか？', choices: ['嘔吐', '下痢', '両方'] },
-  { key: 'food', label: '食品に触れる作業中', text: '直接食品に触れる作業中でしたか？', choices: ['はい', 'いいえ'] },
-  { key: 'since', label: '自覚症状はいつごろから', text: '自覚症状はいつごろからありましたか？\nボタンで選ぶか、「昨日の夜から」のように入力してください。', picker: 'datetime' },
-  { key: 'stoolCo', label: '発症当日の排便（会社トイレ）', text: '発症当日、会社のトイレで排便しましたか？', choices: ['した', 'しない'] },
-  { key: 'stoolHome', label: '発症当日の排便（自宅トイレ）', text: '発症当日、自宅のトイレで排便しましたか？', choices: ['した', 'しない'] },
-  { key: 'vomitCo', label: '発症当日の嘔吐（会社トイレ）', text: '発症当日、会社のトイレで嘔吐しましたか？', choices: ['した', 'しない'] },
-  { key: 'vomitHome', label: '発症当日の嘔吐（自宅トイレ）', text: '発症当日、自宅のトイレで嘔吐しましたか？', choices: ['した', 'しない'] },
-  { key: 'onset', label: '発症日', text: '発症日はいつですか？', picker: 'date' },
-  { key: 'workPrev', label: '発症前日の作業内容', text: '自覚症状が出る前日の作業内容を教えてください。' },
-  { key: 'workOnset', label: '発症日の作業内容', text: '発症日の作業内容を教えてください。' },
+  { key: 'when', label: '発生日時', text: '体調が悪くなったのはいつですか？\nボタンで選ぶか、「11/19 14:30」のように入力してください。', picker: 'datetime' },
+  {
+    key: 'where', label: '発生場所',
+    text: '体調が悪くなった場所はどこですか？\nラインの場合はライン名を入力してください。',
+    choices: ['トイレ', '更衣室', '休憩室', '家', 'その他'], free: true,
+    askText: { 'その他': '場所を入力してください。（例：第2ライン）' },
+  },
+  { key: 'type', label: '症状', text: '嘔吐・下痢のどちらですか？', choices: ['嘔吐', '下痢', '両方', 'どちらもない'] },
+  { key: 'now', label: '現在の体調', text: '今、体調はどうですか？', choices: ['回復した', '少し良くなった', 'まだ悪い'] },
   { key: 'other', label: 'その他', text: 'その他、伝えたいことがあれば入力してください。', choices: ['なし'], free: true },
 ];
 
@@ -146,7 +144,7 @@ function handleAnswer_(ev, userId, s, input) {
     if (text === CMD_SUBMIT) {
       submitReport_(userId, s);
       clearSession_(userId);
-      reply_(ev.replyToken, '体調不良報告を受け付けました。担当者から連絡があるまでお待ちください。');
+      reply_(ev.replyToken, '体調不良報告を受け付けました。担当者から連絡があるまで、出勤せずにお待ちください。');
     } else if (text === CMD_RESTART) {
       s.step = 0;
       s.answers = {};
@@ -159,6 +157,13 @@ function handleAnswer_(ev, userId, s, input) {
   }
 
   const q = QUESTIONS[s.step];
+
+  // 「その他」など、押したら文字入力を促すボタン（回答にはしない）
+  if (text && q.askText && q.askText[text]) {
+    replyMessages_(ev.replyToken, [withQuickReply_(q.askText[text], [CMD_BACK, CMD_CANCEL].map(messageItem_))]);
+    return;
+  }
+
   let value = null;
   if (input.picked && q.picker) {
     value = formatPicked_(input.picked);
@@ -380,17 +385,10 @@ function testReportFlow() {
   send('テスト太郎');
   send('本人');
   pick('2026-11-19T14:30');
+  send('その他');
   send('第2ライン');
   send('両方');
-  send('はい');
-  send('昨日の夜から');
-  send('した');
-  send('しない');
-  send('しない');
-  send('した');
-  pick('2026-11-19');
-  send('仕込み');
-  send('盛り付け');
+  send('少し良くなった');
   send('なし');
   send(CMD_SUBMIT);
 }
