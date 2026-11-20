@@ -33,20 +33,71 @@ const REPORT_KEYWORDS = (PROPS.getProperty('REPORT_KEYWORDS') || '体調不良�
 // ===== 体調不良報告の質問 =====
 // choices: ボタンで出す選択肢 / free: 選択肢以外の入力も受け付ける / picker: 日付・日時の選択ボタンを出す
 // askText: 押したら回答にせず、文字での入力を促すボタン（{ ボタン名: 促す文 }）
+// 質問文・メッセージは bi_(日本語, ポルトガル語) で、日本語の下にポルトガル語を並べて送る
 const QUESTIONS = [
-  { key: 'name', label: 'お名前', text: 'お名前を教えてください。' },
-  { key: 'who', label: '本人／家族', text: 'ご本人ですか、ご家族ですか？', choices: ['本人', '家族'] },
-  { key: 'when', label: '発生日時', text: '体調が悪くなったのはいつですか？\nボタンで選ぶか、「11/19 14:30」のように入力してください。', picker: 'datetime' },
+  { key: 'name', label: 'お名前', text: bi_('お名前を教えてください。', 'Qual é o seu nome?') },
+  {
+    key: 'who', label: '本人／家族',
+    text: bi_('ご本人ですか、ご家族ですか？', 'É você mesmo(a) ou alguém da sua família?'),
+    choices: ['本人', '家族'],
+  },
+  {
+    key: 'when', label: '発生日時',
+    text: bi_('体調が悪くなったのはいつですか？\nボタンで選ぶか、「11/19 14:30」のように入力してください。',
+      'Quando começou a passar mal?\nEscolha pelo botão ou digite, por exemplo, "19/11 14:30".'),
+    picker: 'datetime',
+  },
   {
     key: 'where', label: '発生場所',
-    text: '体調が悪くなった場所はどこですか？\nラインの場合はライン名を入力してください。',
+    text: bi_('体調が悪くなった場所はどこですか？\nラインの場合はライン名を入力してください。',
+      'Onde você começou a passar mal?\nSe foi na linha de produção, digite o nome da linha.'),
     choices: ['トイレ', '更衣室', '休憩室', '家', 'その他'], free: true,
-    askText: { 'その他': '場所を入力してください。（例：第2ライン）' },
+    askText: { 'その他': bi_('場所を入力してください。（例：第2ライン）', 'Digite o local. (Ex.: Linha 2)') },
   },
-  { key: 'type', label: '症状', text: '嘔吐・下痢のどちらですか？', choices: ['嘔吐', '下痢', '両方', 'どちらもない'] },
-  { key: 'now', label: '現在の体調', text: '今、体調はどうですか？', choices: ['回復した', '少し良くなった', 'まだ悪い'] },
-  { key: 'other', label: 'その他', text: 'その他、伝えたいことがあれば入力してください。', choices: ['なし'], free: true },
+  {
+    key: 'type', label: '症状',
+    text: bi_('嘔吐・下痢のどちらですか？', 'Teve vômito ou diarreia?'),
+    choices: ['嘔吐', '下痢', '両方', 'どちらもない'],
+  },
+  {
+    key: 'now', label: '現在の体調',
+    text: bi_('今、体調はどうですか？', 'Como você está se sentindo agora?'),
+    choices: ['回復した', '少し良くなった', 'まだ悪い'],
+  },
+  {
+    key: 'other', label: 'その他',
+    text: bi_('その他、伝えたいことがあれば入力してください。', 'Se tiver mais alguma coisa para informar, digite aqui.'),
+    choices: ['なし'], free: true,
+  },
 ];
+
+// ボタンに日本語と並べて出すポルトガル語（ボタンの文字は20文字まで）
+const PT_LABELS = {
+  '本人': 'Eu mesmo', '家族': 'Família',
+  'トイレ': 'Banheiro', '更衣室': 'Vestiário', '休憩室': 'Sala de descanso', '家': 'Casa', 'その他': 'Outro',
+  '嘔吐': 'Vômito', '下痢': 'Diarreia', '両方': 'Ambos', 'どちらもない': 'Nenhum',
+  '回復した': 'Recuperado', '少し良くなった': 'Melhorou', 'まだ悪い': 'Ainda mal',
+  'なし': 'Nada',
+  '戻る': 'Voltar', '中止': 'Cancelar', '送信': 'Enviar', '最初からやり直す': 'Recomeçar',
+};
+const PICKER_LABELS = { date: '日付を選ぶ/Escolher data', datetime: '日時を選ぶ/Data e hora' };
+
+const MSG = {
+  start: bi_('体調不良報告を始めます。質問に1つずつ答えてください。\n（「戻る」で1つ前へ、「中止」でやめられます）',
+    'Vamos iniciar o relatório de mal-estar. Responda uma pergunta de cada vez.\n(Toque em "Voltar" para voltar à anterior ou em "Cancelar" para parar.)'),
+  confirm: bi_('以下の内容で送信します。よろしければ「送信」を押してください。',
+    'Confira as respostas abaixo. Se estiver tudo certo, toque em "Enviar".'),
+  ack: bi_('体調不良報告を受け付けました。担当者から連絡があるまでお待ちください。\n本人の場合は、出勤せずにお待ちください。',
+    'Recebemos o seu relatório. Aguarde o contato do responsável.\nSe quem está passando mal é você, não venha trabalhar e aguarde o contato.'),
+  cancel: bi_('体調不良報告を中止しました。もう一度始めるときは「' + REPORT_KEYWORDS[0] + '」と送ってください。',
+    'O relatório foi cancelado. Para começar de novo, envie "' + REPORT_KEYWORDS[0] + '".'),
+  chooseButton: bi_('下のボタンから選んでください。', 'Escolha uma das opções nos botões abaixo.'),
+  typeText: bi_('文字で入力してください。', 'Por favor, responda digitando o texto.'),
+};
+
+function bi_(ja, pt) {
+  return ja + '\n\n' + pt;
+}
 
 const CMD_BACK = '戻る';
 const CMD_CANCEL = '中止';
@@ -82,7 +133,8 @@ function handleEvent_(ev) {
   }
   if (ev.type !== 'message') return;
 
-  const text = ev.message.type === 'text' ? ev.message.text.trim() : null;
+  // 「本人/Eu mesmo」のようなボタンの文字は、日本語の「本人」に戻してから扱う
+  const text = ev.message.type === 'text' ? toJa_(ev.message.text.trim()) : null;
 
   // 管理者のuserId確認用コマンド
   if (text === ID_COMMAND) {
@@ -95,7 +147,7 @@ function handleEvent_(ev) {
     const session = { step: 0, answers: {}, startedAt: Date.now() };
     saveSession_(userId, session);
     replyMessages_(ev.replyToken, [
-      textMsg_('体調不良報告を始めます。質問に1つずつ答えてください。\n（「戻る」で1つ前へ、「中止」でやめられます）'),
+      textMsg_(MSG.start),
       questionMsg_(session),
     ]);
     return;
@@ -129,7 +181,7 @@ function handleAnswer_(ev, userId, s, input) {
 
   if (text === CMD_CANCEL) {
     clearSession_(userId);
-    reply_(ev.replyToken, '体調不良報告を中止しました。もう一度始めるときは「' + REPORT_KEYWORDS[0] + '」と送ってください。');
+    reply_(ev.replyToken, MSG.cancel);
     return;
   }
   if (text === CMD_BACK) {
@@ -144,14 +196,14 @@ function handleAnswer_(ev, userId, s, input) {
     if (text === CMD_SUBMIT) {
       submitReport_(userId, s);
       clearSession_(userId);
-      reply_(ev.replyToken, '体調不良報告を受け付けました。担当者から連絡があるまで、出勤せずにお待ちください。');
+      reply_(ev.replyToken, MSG.ack);
     } else if (text === CMD_RESTART) {
       s.step = 0;
       s.answers = {};
       saveSession_(userId, s);
       replyMessages_(ev.replyToken, [questionMsg_(s)]);
     } else {
-      replyMessages_(ev.replyToken, [textMsg_('下のボタンから選んでください。'), confirmMsg_(s)]);
+      replyMessages_(ev.replyToken, [textMsg_(MSG.chooseButton), confirmMsg_(s)]);
     }
     return;
   }
@@ -173,7 +225,7 @@ function handleAnswer_(ev, userId, s, input) {
   }
 
   if (value === null) {
-    const hint = q.choices && !q.free ? '下のボタンから選んでください。' : '文字で入力してください。';
+    const hint = q.choices && !q.free ? MSG.chooseButton : MSG.typeText;
     replyMessages_(ev.replyToken, [textMsg_(hint), questionMsg_(s)]);
     return;
   }
@@ -220,7 +272,7 @@ function questionMsg_(s) {
       type: 'action',
       action: {
         type: 'datetimepicker',
-        label: q.picker === 'date' ? '日付を選ぶ' : '日時を選ぶ',
+        label: PICKER_LABELS[q.picker],
         data: 'picker=' + q.key,
         mode: q.picker,
       },
@@ -233,12 +285,26 @@ function questionMsg_(s) {
 
 function confirmMsg_(s) {
   return withQuickReply_(
-    '以下の内容で送信します。よろしければ「送信」を押してください。\n\n' + summary_(s),
+    MSG.confirm + '\n\n' + summary_(s),
     [CMD_SUBMIT, CMD_BACK, CMD_RESTART, CMD_CANCEL].map(messageItem_)
   );
 }
 
-function messageItem_(label) {
+/** ボタンの表示: 「本人」→「本人/Eu mesmo」 */
+function buttonLabel_(ja) {
+  return PT_LABELS[ja] ? ja + '/' + PT_LABELS[ja] : ja;
+}
+
+/** ボタンから送られた「本人/Eu mesmo」を「本人」に戻す（それ以外の文字はそのまま） */
+function toJa_(text) {
+  for (const ja in PT_LABELS) {
+    if (text === buttonLabel_(ja)) return ja;
+  }
+  return text;
+}
+
+function messageItem_(ja) {
+  const label = buttonLabel_(ja);
   return { type: 'action', action: { type: 'message', label: label, text: label } };
 }
 
